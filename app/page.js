@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { Box, Stack, Typography, Button, Modal, TextField, responsiveFontSizes } from '@mui/material';
+import { Box, Stack, Typography, Button, Modal, TextField } from '@mui/material';
 import { firestore } from '@/firebase';
 import { collection, doc, getDocs, query, setDoc, deleteDoc, getDoc } from 'firebase/firestore';
 
@@ -40,6 +40,7 @@ export default function Home() {
   const [inventory, setInventory] = useState([]);
   const [open, setOpen] = useState(false);
   const [itemName, setItemName] = useState('');
+  const [searchQuery, setSearchQuery] = useState(''); // State for search query
   const [recipes, setRecipes] = useState([]);
 
   // Fetch inventory data from Firestore
@@ -120,6 +121,11 @@ export default function Home() {
     setRecipes(availableRecipes);
   };
 
+  // Filter inventory based on search query
+  const filteredInventory = inventory.filter((item) =>
+    item.name.toLowerCase().includes(searchQuery.toLowerCase())
+  );
+
   return (
     <Box width="100vw" height="100vh" display="flex" flexDirection="column" alignItems="center" bgcolor="#f8f9fa">
       {/* Header */}
@@ -161,8 +167,17 @@ export default function Home() {
               Add Item
             </Button>
           </Typography>
+          <TextField
+            label="Search Inventory"
+            variant="outlined"
+            fullWidth
+            margin="normal"
+            size='small'
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+          />
           <Stack spacing={1} maxHeight="500px" overflow="auto" sx={{ marginBottom: '20px' }}>
-            {inventory.map(({ name, quantity }) => (
+            {filteredInventory.map(({ name, quantity }) => (
               <Box
                 key={name}
                 width="100%"
@@ -263,4 +278,3 @@ export default function Home() {
     </Box>
   );
 }
-
