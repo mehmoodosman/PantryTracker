@@ -1,9 +1,6 @@
 #environment variables
 .env*.local
 
-# Firebase configuration file
-firebase.js
-
 # Node.js dependencies
 node_modules/
 
