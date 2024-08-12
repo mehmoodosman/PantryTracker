@@ -40,8 +40,9 @@ export default function Home() {
   const [inventory, setInventory] = useState([]);
   const [open, setOpen] = useState(false);
   const [itemName, setItemName] = useState('');
-  const [searchQuery, setSearchQuery] = useState(''); // State for search query
+  const [searchQuery, setSearchQuery] = useState('');
   const [recipes, setRecipes] = useState([]);
+  const [loading, setLoading] = useState(false); // Add loading state
 
   // Fetch inventory data from Firestore
   const updateInventory = async () => {
@@ -89,36 +90,33 @@ export default function Home() {
   const handleOpen = () => setOpen(true);
   const handleClose = () => setOpen(false);
 
-  // Mock AI recipe generation logic
-  const generateRecipes = () => {
+  // Fetch recipes from the API
+  const generateRecipes = async () => {
     if (!inventory.length) return;
 
-    const sampleRecipes = [
-      {
-        title: 'Mixed Vegetable Stir Fry',
-        ingredients: ['Broccoli', 'Bell Peppers', 'Carrots', 'Soy Sauce'],
-        instructions: 'Sauté vegetables in a pan with soy sauce until tender. Serve with rice or noodles.',
-      },
-      {
-        title: 'Pasta Primavera',
-        ingredients: ['Pasta', 'Tomatoes', 'Zucchini', 'Garlic', 'Parmesan'],
-        instructions: 'Cook pasta. Sauté tomatoes and zucchini with garlic, mix with pasta, and sprinkle Parmesan.',
-      },
-      {
-        title: 'Taco Salad',
-        ingredients: ['Lettuce', 'Tortillas', 'Black Beans', 'Avocado', 'Cheese'],
-        instructions: 'Mix lettuce with beans and chopped avocado. Crush tortillas on top and sprinkle cheese.',
-      },
-    ];
+    const items = inventory.map(item => item.name);
+    setLoading(true); // Set loading to true
 
-    // Filter recipes that can be made with available ingredients
-    const availableRecipes = sampleRecipes.filter((recipe) =>
-      recipe.ingredients.every((ingredient) =>
-        inventory.some((item) => item.name.toLowerCase() === ingredient.toLowerCase())
-      )
-    );
+    try {
+      const response = await fetch('/api/recipe-suggestions', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ item: items }),
+      });
 
-    setRecipes(availableRecipes);
+      if (!response.ok) {
+        throw new Error('Failed to fetch recipes');
+      }
+
+      const data = await response.json();
+      const recipes = data.recipes ? JSON.parse(data.recipes) : [];
+      setRecipes(recipes);
+    } catch (error) {
+      console.error('Error generating recipes:', error);
+      setRecipes([]);
+    } finally {
+      setLoading(false); // Set loading to false
+    }
   };
 
   // Filter inventory based on search query
@@ -151,7 +149,8 @@ export default function Home() {
       >
         {/* Pantry Inventory List */}
         <Box flex="1" width={'100%'} bgcolor="white" borderRadius="8px" padding="16px" boxShadow="0 0 10px rgba(0,0,0,0.1)" position="relative">
-          <Typography variant="h6" gutterBottom> Pantry Inventory
+          <Typography variant="h6" gutterBottom>
+            Pantry Inventory
             <Button
               variant="contained"
               color="primary"
@@ -214,8 +213,14 @@ export default function Home() {
             ))}
           </Stack>
           {/* Analyze Recipe Button */}
-          <Button variant="contained" color="success" sx={{ width: '100%' }} onClick={generateRecipes}>
-            Analyze Recipe
+          <Button
+            variant="contained"
+            color="success"
+            sx={{ width: '100%' }}
+            onClick={generateRecipes}
+            disabled={loading} // Disable button if loading
+          >
+            {loading ? 'Generating...' : 'Analyze Recipe'}
           </Button>
         </Box>
 
